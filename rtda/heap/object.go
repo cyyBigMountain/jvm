@@ -2,8 +2,11 @@ package heap
 
 type Object struct {
 	class *Class
-	data  interface{} // 表示存放普通对象或者数组，实际存放的是Slots变量
+	data  interface{} //表示存放普通对象或者数组，实际存放的是Slots变量
+	extra interface{} //表示记录Object结构体实例的额外信息
 }
+
+
 
 // 创建对象
 func newObject(class *Class) *Object {
@@ -20,6 +23,14 @@ func (self *Object) Class() *Class {
 
 func (self *Object) Fields() Slots {
 	return self.data.(Slots) //针对普通对象
+}
+
+func (self *Object) Extra() interface{} {
+	return self.extra
+}
+
+func (self *Object) SetExtra(extra interface{}) {
+	self.extra = extra
 }
 
 func (self *Object) IsInstanceOf(class *Class) bool {

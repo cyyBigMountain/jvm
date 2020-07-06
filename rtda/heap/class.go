@@ -22,6 +22,7 @@ type Class struct {
 	staticSlotCount   uint
 	staticVars        Slots
 	initStarted       bool
+	jClass            *Object
 }
 
 func newClass(cf *classfile.ClassFile) *Class {
@@ -86,6 +87,9 @@ func (self *Class) StaticVars() Slots {
 func (self *Class) InitStarted() bool {
 	return self.initStarted
 }
+func (self *Class) JClass() *Object {
+	return self.jClass
+}
 
 func (self *Class) StartInit() {
 	self.initStarted = true
@@ -129,7 +133,8 @@ func (self *Class) getField(name, descriptor string, isStatic bool) *Field {
 	for c := self; c != nil; c = c.superClass {
 		for _, field := range c.fields {
 			if field.IsStatic() == isStatic &&
-				field.name == name && field.descriptor == descriptor {
+				field.name == name &&
+				field.descriptor == descriptor {
 
 				return field
 			}
@@ -156,3 +161,27 @@ func (self *Class) ArrayClass() *Class {
 	arrayClassName := getArrayClassName(self.name)
 	return self.loader.LoadClass(arrayClassName)
 }
+
+func (self *Class) JavaName() string {
+	return strings.Replace(self.name, "/", ".", -1)
+}
+
+func (self *Class) IsPrimitive() bool {
+	_, ok := primitiveTypes[self.name]
+	return ok
+}
+
+func (self *Class) GetInstanceMethod(name, descriptor string) *Method {
+	return self.getMethod(name, descriptor, false)
+}
+
+func (self *Class) GetRefVar(fieldName, fieldDescriptor string) *Object {
+	field := self.getField(fieldName, fieldDescriptor, true)
+	return self.staticVars.GetRef(field.slotId)
+}
+func (self *Class) SetRefVar(fieldName, fieldDescriptor string, ref *Object) {
+	field := self.getField(fieldName, fieldDescriptor, true)
+	self.staticVars.SetRef(field.slotId, ref)
+}
+
+

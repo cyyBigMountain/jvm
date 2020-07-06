@@ -21,11 +21,54 @@ type ClassLoader struct {
 }
 
 func NewClassLoader(cp *classpath.Classpath, verboseFlag bool) *ClassLoader {
-	return &ClassLoader{
+	loader :=  &ClassLoader{
 		cp:          cp,
 		verboseFlag: verboseFlag,
 		classMap:    make(map[string]*Class),
 	}
+
+	//加载引用类型反射class实例
+	loader.loadBasicClasses()
+	//加载基本类型和void反射class实例
+	loader.loadPrimitiveClasses()
+	return loader
+}
+
+/*
+ 加载java反射相关的引用类型class类
+ */
+func (self *ClassLoader) loadBasicClasses()  {
+	jlClassClass := self.LoadClass("java/lang/Class")
+	for _, class := range self.classMap {
+		if class.jClass == nil {
+			class.jClass = jlClassClass.NewObject()
+			class.jClass.extra = class
+		}
+	}
+}
+
+/*
+ 加载java反射相关的void和基本类型class类
+*/
+func (self *ClassLoader) loadPrimitiveClasses()  {
+	for primitiveType, _ := range primitiveTypes {
+		self.loadPrimitiveClass(primitiveType) //primitiveType是void，int，float等
+	}
+}
+
+/*
+ 生成java反射相关的void和基本类型class类
+ */
+func (self *ClassLoader) loadPrimitiveClass(className string)  {
+	class := &Class{
+		accessFlags: ACC_PUBLIC,
+		name: className,
+		loader: self,
+		initStarted: true,
+	}
+	class.jClass = self.classMap["java/lang/Class"].NewObject()
+	class.jClass.extra = class
+	self.classMap[className] = class
 }
 
 func (self *ClassLoader) LoadClass(name string) *Class {
@@ -34,13 +77,24 @@ func (self *ClassLoader) LoadClass(name string) *Class {
 		//已加载则返回
 		return class
 	}
+
+	var class *Class
 	//判断是否为数组
 	if name[0] == '[' {
 		//加载数组类型
-		return self.loadArrayClass(name)
+		class = self.loadArrayClass(name)
+	} else {
+		//加载非数组类型
+		class = self.loadNonArrayClass(name)
 	}
-	//加载非数组类型
-	return self.loadNonArrayClass(name)
+
+	//判断是否已加载反射相关的class实例
+	if jlClassClass, ok := self.classMap["java/lang/Class"]; ok {
+		class.jClass = jlClassClass.NewObject()
+		class.jClass.extra = class
+	}
+
+	return class
 }
 
 
