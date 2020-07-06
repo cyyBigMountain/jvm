@@ -39,3 +39,4 @@ func (self *LineNumberTableAttribute) GetLineNumber(pc int) int {
 	}
 	return -1
 }
+

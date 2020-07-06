@@ -93,3 +93,10 @@ func (self *OperandStack) PushBoolean(val bool) {
 		self.PushInt(0)
 	}
 }
+
+func (self *OperandStack) Clear()  {
+	self.size = 0
+	for i := range self.slots {
+		self.slots[i].ref = nil
+	}
+}

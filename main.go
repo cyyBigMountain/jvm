@@ -10,7 +10,7 @@ import "strings"
 
 func main() {
 	cmd := parseCmd()
-	cmd.class = "BoxTest"
+	cmd.class = "ParseIntTest"
 	if cmd.versionFlag {
 		fmt.Println("version 0.0.1")
 	} else if cmd.helpFlag || cmd.class == "" {
